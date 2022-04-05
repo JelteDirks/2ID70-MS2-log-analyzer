@@ -46,19 +46,21 @@ public class Driver {
         System.out.println("Worker 1 has added a total of " + Driver.bytesToGibibytes(worker1BytesList.reduce(Long::sum)) + " to memory");
     }
 
-    private static void averageTaskRunningTime() {
-        JavaRDD<String> worker0 = getWorker0();
-
-        JavaRDD<String> x1 = worker0.filter(Driver::keepFinishedTask);
-        JavaRDD<Long> x2 = x1.map(Driver::getRunningTimeOfTask)
+    private static void runningTimeStats(JavaRDD<String> workerLogs, String id) {
+        JavaRDD<Long> x1 = workerLogs.filter(Driver::keepFinishedTask)
+                .map(Driver::getRunningTimeOfTask)
                 .filter(l -> l != -1)
                 .cache();
-        long finishedTasks = x2.count();
-        long x3 = x2.reduce(Long::sum);
-        Duration runningTime0 = Duration.ofMillis(x3);
-        System.out.println("Worker 0 has worked for " +
-                runningTime0.toMinutesPart() + " minutes and " +
-                runningTime0.toSecondsPart() + " seconds");
+        long finishedTasks = x1.count();
+        long runningTimeMillis = x1.reduce(Long::sum);
+        Duration runningTime = Duration.ofMillis(runningTimeMillis);
+        int avg = Math.toIntExact(runningTimeMillis / finishedTasks);
+
+        System.out.println(id + " has worked for " +
+                runningTime.toMinutesPart() + " minutes and " +
+                runningTime.toSecondsPart() + " seconds");
+
+        System.out.println(id + " took an average of " + avg + " ms");
     }
 
     private static long getRunningTimeOfTask(String line) {
@@ -117,7 +119,8 @@ public class Driver {
     public static void main(String[] args) {
         sparkContext.setLogLevel("WARN");
         workerMemoryUsage();
-        averageTaskRunningTime();
+        runningTimeStats(getWorker0(), "Worker 0");
+        runningTimeStats(getWorker1(), "Worker 1");
     }
 
 }
