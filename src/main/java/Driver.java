@@ -2,6 +2,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
+import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,6 +46,36 @@ public class Driver {
         System.out.println("Worker 1 has added a total of " + Driver.bytesToGibibytes(worker1BytesList.reduce(Long::sum)) + " to memory");
     }
 
+    private static void averageTaskRunningTime() {
+        JavaRDD<String> worker0 = getWorker0();
+
+        JavaRDD<String> x1 = worker0.filter(Driver::keepFinishedTask);
+        JavaRDD<Long> x2 = x1.map(Driver::getRunningTimeOfTask)
+                .filter(l -> l != -1)
+                .cache();
+        long finishedTasks = x2.count();
+        long x3 = x2.reduce(Long::sum);
+        Duration runningTime0 = Duration.ofMillis(x3);
+        System.out.println("Worker 0 has worked for " +
+                runningTime0.toMinutesPart() + " minutes and " +
+                runningTime0.toSecondsPart() + " seconds");
+    }
+
+    private static long getRunningTimeOfTask(String line) {
+        Pattern p = Pattern.compile(".*in (\\d+) m?s on.*");
+        Matcher m = p.matcher(line);
+        if (m.matches()) {
+            return Long.parseLong(m.group(1));
+        }
+        return -1;
+    }
+
+    private static boolean keepFinishedTask(String line) {
+        Pattern p = Pattern.compile(".*TaskSetManager: Finished task.*");
+        Matcher m = p.matcher(line);
+        return m.matches();
+    }
+
     public static String bytesToGibibytes(long bytes) {
         double sizeGiB = bytes / Math.pow(1024, 3);
         return sizeGiB + " GiB";
@@ -86,6 +117,7 @@ public class Driver {
     public static void main(String[] args) {
         sparkContext.setLogLevel("WARN");
         workerMemoryUsage();
+        averageTaskRunningTime();
     }
 
 }
