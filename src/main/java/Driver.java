@@ -7,21 +7,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Driver {
-    private static void workerMemoryUsage() {
-        JavaRDD<String> logs = getLogs();
-
-        JavaRDD<Long> worker0BytesList = getWorker0()
+    private static void workerMemoryUsage(JavaRDD<String> workerLogs, String id) {
+        JavaRDD<Long> worker0BytesList = workerLogs
                 .filter(Driver::addRDDToMemoryFilter)
                 .map(Driver::getSize)
                 .map(Driver::stringSizeToBytes);
 
-        JavaRDD<Long> worker1BytesList = getWorker1()
-                .filter(Driver::addRDDToMemoryFilter)
-                .map(Driver::getSize)
-                .map(Driver::stringSizeToBytes);
-
-        System.out.println("Worker 0 has added a total of " + Driver.bytesToGibibytes(worker0BytesList.reduce(Long::sum)) + " to memory");
-        System.out.println("Worker 1 has added a total of " + Driver.bytesToGibibytes(worker1BytesList.reduce(Long::sum)) + " to memory");
+        System.out.println(id + " has added a total of " + Driver.bytesToGibibytes(worker0BytesList.reduce(Long::sum)) + " to memory");
     }
 
     private static void runningTimeStats(JavaRDD<String> workerLogs, String id) {
@@ -117,7 +109,8 @@ public class Driver {
 
     public static void main(String[] args) {
         sparkContext.setLogLevel("WARN");
-        workerMemoryUsage();
+        workerMemoryUsage(getWorker0(), "Worker 0");
+        workerMemoryUsage(getWorker1(), "Worker 1");
         runningTimeStats(getWorker0(), "Worker 0");
         runningTimeStats(getWorker1(), "Worker 1");
     }
