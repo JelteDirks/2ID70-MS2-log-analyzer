@@ -7,28 +7,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Driver {
-
-    private static final int PARTITIONS = 16;
-    private static final SparkConf conf = new SparkConf()
-            .setAppName("DA")
-            .setMaster("local[*]");
-
-    private static final JavaSparkContext sparkContext = new JavaSparkContext(conf);
-
-    private static JavaRDD<String> getLogs() {
-        return sparkContext.textFile("/Users/jeltedirks/IdeaProjects/spark-playground/logs/submission-*.spark-submit.log", PARTITIONS);
-    }
-
-    private static JavaRDD<String> getWorker0() {
-        JavaRDD<String> logs = getLogs();
-        return logs.filter(line -> line.contains("worker-0"));
-    }
-
-    private static JavaRDD<String> getWorker1() {
-        JavaRDD<String> logs = getLogs();
-        return logs.filter(line -> line.contains("worker-1"));
-    }
-
     private static void workerMemoryUsage() {
         JavaRDD<String> logs = getLogs();
 
@@ -61,6 +39,20 @@ public class Driver {
                 runningTime.toSecondsPart() + " seconds");
 
         System.out.println(id + " took an average of " + avg + " ms");
+    }
+
+    private static JavaRDD<String> getLogs() {
+        return sparkContext.textFile("/Users/jeltedirks/IdeaProjects/spark-playground/logs/submission-*.spark-submit.log", PARTITIONS);
+    }
+
+    private static JavaRDD<String> getWorker0() {
+        JavaRDD<String> logs = getLogs();
+        return logs.filter(line -> line.contains("worker-0"));
+    }
+
+    private static JavaRDD<String> getWorker1() {
+        JavaRDD<String> logs = getLogs();
+        return logs.filter(line -> line.contains("worker-1"));
     }
 
     private static long getRunningTimeOfTask(String line) {
@@ -115,6 +107,13 @@ public class Driver {
 
         return "";
     }
+
+    private static final int PARTITIONS = 16;
+    private static final SparkConf conf = new SparkConf()
+            .setAppName("DA")
+            .setMaster("local[*]");
+
+    private static final JavaSparkContext sparkContext = new JavaSparkContext(conf);
 
     public static void main(String[] args) {
         sparkContext.setLogLevel("WARN");
