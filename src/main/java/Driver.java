@@ -33,8 +33,13 @@ public class Driver {
         System.out.println(id + " took an average of " + avg + " ms");
     }
 
+    private static JavaRDD<String> LOGS = null;
+
     private static JavaRDD<String> getLogs() {
-        return sparkContext.textFile("/Users/jeltedirks/IdeaProjects/spark-playground/logs/submission-*.spark-submit.log", PARTITIONS);
+        if (LOGS == null) {
+            LOGS = sparkContext.textFile("/Users/jeltedirks/IdeaProjects/spark-playground/logs/submission-*.spark-submit.log", PARTITIONS);
+        }
+        return LOGS;
     }
 
     private static JavaRDD<String> getWorker0() {
